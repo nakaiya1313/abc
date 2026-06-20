@@ -54,8 +54,9 @@ button.primary{background:#69b6ff;color:#fff}button.on{background:#8ee6a4}button
 <div id="app">
   <div class="ad-small">
     <div class="ad-small-inner">
-<!-- admax -->
-<script src="https://adm.shinobi.jp/s/3819963095462ab018c6527cf299e45d"></script>
+      <!-- 小さい広告枠：忍者AdMax 320×50コードをここに入れてください -->
+      <!-- admax -->
+<script src="https://adm.shinobi.jp/s/333a2c8a3bee0f79e94c33161f546957"></script>
 <!-- admax -->
     </div>
   </div>
@@ -99,8 +100,9 @@ button.primary{background:#69b6ff;color:#fff}button.on{background:#8ee6a4}button
       </div>
 
       <div class="ad-large">
-<!-- admax -->
-<script src="https://adm.shinobi.jp/s/304ea3c51c3f7ce2d0d1a126c9b7e084"></script>
+        <!-- おおきいこうこく 300×250 -->
+        <!-- admax -->
+<script src="https://adm.shinobi.jp/s/7b3a5ddb43f4cb9eadb45b1c506ee384"></script>
 <!-- admax -->
       </div>
     </div>
@@ -445,8 +447,8 @@ function showAnswer(){
   clearCheckTimer();
   if(!current)return;
   const a=getAnswer();
-  input=a;
-  message.textContent="こたえは「"+a+"」";
+  input="";
+  message.textContent="こたえは「"+a+"」 かいてみよう";
   updateDisplay();
   speak(current.word,"en-US");
 }
