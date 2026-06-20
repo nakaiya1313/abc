@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>こどもABCタッチ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="description" content="絵を見てアルファベットをタッチし、英単語のつづりを覚える子供向けブラウザ学習ゲームです。">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{margin:0;width:100%;height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#eaf4ff;color:#333}
+#app{width:100vw;height:100dvh;display:flex;flex-direction:column;background:linear-gradient(#eef7ff,#cfe6ff)}
+.ad-small{height:50px;min-height:50px;max-height:50px;width:100%;background:rgba(255,255,255,.82);border-bottom:1px dashed rgba(0,0,0,.16);display:flex;align-items:center;justify-content:center;color:#777;font-size:12px;overflow:hidden;flex-shrink:0}
+.ad-small-inner{width:320px;height:50px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.ad-large{width:300px;height:250px;position:relative;z-index:1;margin:14px auto;border:2px dashed rgba(0,0,0,.18);border-radius:16px;background:rgba(255,255,255,.75);display:flex;align-items:center;justify-content:center;color:#777;font-size:13px;overflow:hidden}
+#topArea{flex:0 0 auto;padding:6px 8px 4px;display:flex;flex-direction:column;align-items:center;gap:5px}
+#statusBar{width:min(98vw,760px);display:flex;justify-content:space-between;align-items:center;gap:6px;font-weight:900;font-size:12px}
+.pill{background:rgba(255,255,255,.88);border:2px solid rgba(0,0,0,.07);border-radius:999px;padding:4px 8px;white-space:nowrap}
+#questionCard{width:min(98vw,760px);background:rgba(255,255,255,.95);border:3px solid #69b6ff;border-radius:18px;padding:7px 8px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+#emoji{font-size:clamp(48px,13vw,92px);line-height:1}
+#jaHint{font-size:clamp(16px,4.6vw,24px);font-weight:900;color:#2e7d32;line-height:1.1}
+#circleHint{font-size:clamp(20px,5.4vw,32px);letter-spacing:.12em;color:#1e88e5;font-weight:900;line-height:1.1}
+#answerDisplay{min-height:34px;font-size:clamp(24px,6.6vw,42px);letter-spacing:.14em;font-weight:900;color:#222;line-height:1.15}
+#message{min-height:22px;font-size:16px;font-weight:900;color:#1565c0;line-height:1.2}
+#controls{width:min(98vw,760px);display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+button{border:none;border-radius:999px;font-weight:900;padding:8px 6px;font-size:12px;color:#333;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.12);cursor:pointer}
+button.primary{background:#69b6ff;color:#fff}button.on{background:#8ee6a4}button.danger{background:#ffb0a6}
+#keyboardArea{flex:1 1 auto;min-height:0;padding:8px 6px 10px;background:rgba(255,255,255,.45);border-top:2px solid rgba(105,182,255,.4);overflow:hidden;display:flex;flex-direction:column;gap:6px}
+#letterGrid{width:min(98vw,720px);margin:0 auto;display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;gap:6px;flex:1;min-height:0}
+.letterBtn{border-radius:14px;background:#fff;border:2px solid rgba(0,0,0,.08);box-shadow:0 2px 5px rgba(0,0,0,.08);font-size:clamp(22px,6.4vw,38px);font-weight:900;color:#1565c0;display:flex;align-items:center;justify-content:center;min-width:0;min-height:0}
+.letterBtn:active{transform:scale(.95);background:#dff0ff}
+#overlay{position:fixed;inset:0;z-index:20;background:rgba(234,244,255,.97);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}
+.panel{width:min(94vw,520px);max-height:96dvh;overflow:auto;background:#fff;border:4px solid #69b6ff;border-radius:28px;padding:20px 16px;text-align:center;box-shadow:0 12px 28px rgba(0,0,0,.18)}
+.panel h1{margin:0 0 8px;font-size:34px;color:#1565c0}.panel p{margin:8px 0;line-height:1.65;font-size:15px}
+.startButtons{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:12px 0 10px;position:relative;z-index:9999}.bigButton{padding:16px 10px;font-size:19px;background:#69b6ff;color:#fff;position:relative;z-index:10000}
+@media(max-height:670px){
+  .ad-large{height:180px}
+  #emoji{font-size:44px}
+  #jaHint{font-size:15px}
+  #circleHint{font-size:20px}
+  #answerDisplay{font-size:24px;min-height:28px}
+  #message{font-size:14px;min-height:18px}
+  button{font-size:11px;padding:6px 4px}
+}
+@media(max-width:380px){
+  #controls{gap:4px}
+  button{font-size:11px;padding:7px 3px}
+  #letterGrid{gap:5px}
+  .letterBtn{border-radius:11px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="ad-small">
+    <div class="ad-small-inner">
+      <!-- 小さい広告枠：忍者AdMax 320×50コードをここに入れてください -->
+      <!-- admax -->
+<script src="https://adm.shinobi.jp/s/333a2c8a3bee0f79e94c33161f546957"></script>
+<!-- admax -->
+    </div>
+  </div>
+
+  <div id="topArea">
+    <div id="statusBar">
+      <div class="pill" id="modeText">大文字 ABC</div>
+      <div class="pill" id="scoreText">せいかい 0</div>
+      <div class="pill" id="missText">ミス 0/5</div>
+    </div>
+
+    <div id="questionCard">
+      <div id="emoji">🐰</div>
+      <div id="jaHint">なまえ</div>
+      <div id="circleHint">○○○</div>
+      <div id="answerDisplay">＿ ＿ ＿</div>
+      <div id="message">えいごで かいてね</div>
+    </div>
+
+    <div id="controls">
+      <button class="primary" id="modeBtn">abc</button>
+      <button id="soundBtn" class="on">おとON</button>
+      <button id="backBtn">1つけす</button>
+      <button class="danger" id="clearBtn">ぜんぶ</button>
+      <button id="nextBtn">つぎ</button><button id="answerBtn">こたえ</button><button id="titleBtn">もどる</button>
+    </div>
+  </div>
+
+  <div id="keyboardArea">
+    <div id="letterGrid"></div>
+  </div>
+
+  <div id="overlay">
+    <div class="panel">
+      <h1>こども<br>ABCタッチ</h1>
+      <p>えをみて、したのアルファベットをタッチしよう。<br>えいごのたんごの つづりを おぼえられます。</p>
+      <div class="startButtons">
+        <button class="bigButton" type="button" onclick="startGame('easy')">やさしい</button>
+        <button class="bigButton" type="button" onclick="startGame('normal')">ふつう</button>
+        <button class="bigButton" type="button" onclick="startGame('hard')">むずかしい</button>
+      </div>
+
+      <div class="ad-large">
+        <!-- おおきいこうこく 300×250 -->
+        <!-- admax -->
+<script src="https://adm.shinobi.jp/s/7b3a5ddb43f4cb9eadb45b1c506ee384"></script>
+<!-- admax -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const questions=[
+{emoji:"🐱",word:"cat",ja:"ねこ",level:"easy"},
+{emoji:"🐶",word:"dog",ja:"いぬ",level:"easy"},
+{emoji:"🐷",word:"pig",ja:"ぶた",level:"easy"},
+{emoji:"🐮",word:"cow",ja:"うし",level:"easy"},
+{emoji:"🐝",word:"bee",ja:"はち",level:"easy"},
+{emoji:"🦊",word:"fox",ja:"きつね",level:"easy"},
+{emoji:"🐜",word:"ant",ja:"あり",level:"easy"},
+{emoji:"🦇",word:"bat",ja:"こうもり",level:"easy"},
+{emoji:"🐔",word:"hen",ja:"にわとり",level:"easy"},
+{emoji:"🦉",word:"owl",ja:"ふくろう",level:"easy"},
+{emoji:"☀️",word:"sun",ja:"たいよう",level:"easy"},
+{emoji:"🚌",word:"bus",ja:"バス",level:"easy"},
+{emoji:"🚗",word:"car",ja:"くるま",level:"easy"},
+{emoji:"🎩",word:"hat",ja:"ぼうし",level:"easy"},
+{emoji:"🥚",word:"egg",ja:"たまご",level:"easy"},
+{emoji:"👜",word:"bag",ja:"かばん",level:"easy"},
+{emoji:"✏️",word:"pen",ja:"ペン",level:"easy"},
+{emoji:"🔑",word:"key",ja:"かぎ",level:"easy"},
+{emoji:"☕",word:"cup",ja:"コップ",level:"easy"},
+{emoji:"📦",word:"box",ja:"はこ",level:"easy"},
+{emoji:"👂",word:"ear",ja:"みみ",level:"easy"},
+{emoji:"👁️",word:"eye",ja:"め",level:"easy"},
+
+{emoji:"🐸",word:"frog",ja:"かえる",level:"normal"},
+{emoji:"🐟",word:"fish",ja:"さかな",level:"normal"},
+{emoji:"🦆",word:"duck",ja:"あひる",level:"normal"},
+{emoji:"🐻",word:"bear",ja:"くま",level:"normal"},
+{emoji:"🦁",word:"lion",ja:"ライオン",level:"normal"},
+{emoji:"🐺",word:"wolf",ja:"おおかみ",level:"normal"},
+{emoji:"🐐",word:"goat",ja:"やぎ",level:"normal"},
+{emoji:"🦀",word:"crab",ja:"かに",level:"normal"},
+{emoji:"🐦",word:"bird",ja:"とり",level:"normal"},
+{emoji:"🦌",word:"deer",ja:"しか",level:"normal"},
+{emoji:"🐴",word:"horse",ja:"うま",level:"normal"},
+{emoji:"🐭",word:"mouse",ja:"ねずみ",level:"normal"},
+{emoji:"🐍",word:"snake",ja:"へび",level:"normal"},
+{emoji:"🐳",word:"whale",ja:"くじら",level:"normal"},
+{emoji:"🦈",word:"shark",ja:"サメ",level:"normal"},
+{emoji:"🐯",word:"tiger",ja:"とら",level:"normal"},
+{emoji:"🦓",word:"zebra",ja:"しまうま",level:"normal"},
+{emoji:"🐑",word:"sheep",ja:"ひつじ",level:"normal"},
+{emoji:"🌙",word:"moon",ja:"つき",level:"normal"},
+{emoji:"⭐",word:"star",ja:"ほし",level:"normal"},
+{emoji:"🌧️",word:"rain",ja:"あめ",level:"normal"},
+{emoji:"❄️",word:"snow",ja:"ゆき",level:"normal"},
+{emoji:"🌹",word:"rose",ja:"バラ",level:"normal"},
+{emoji:"🍃",word:"leaf",ja:"はっぱ",level:"normal"},
+{emoji:"🍰",word:"cake",ja:"ケーキ",level:"normal"},
+{emoji:"🥛",word:"milk",ja:"ミルク",level:"normal"},
+{emoji:"🍎",word:"apple",ja:"りんご",level:"normal"},
+{emoji:"🍇",word:"grape",ja:"ぶどう",level:"normal"},
+{emoji:"🍋",word:"lemon",ja:"レモン",level:"normal"},
+{emoji:"🍐",word:"pear",ja:"なし",level:"normal"},
+{emoji:"🥝",word:"kiwi",ja:"キウイ",level:"normal"},
+{emoji:"🚢",word:"ship",ja:"ふね",level:"normal"},
+{emoji:"🚲",word:"bike",ja:"じてんしゃ",level:"normal"},
+{emoji:"🚤",word:"boat",ja:"ボート",level:"normal"},
+{emoji:"⚽",word:"ball",ja:"ボール",level:"normal"},
+{emoji:"🔔",word:"bell",ja:"ベル",level:"normal"},
+{emoji:"🥁",word:"drum",ja:"たいこ",level:"normal"},
+{emoji:"🪁",word:"kite",ja:"たこ",level:"normal"},
+{emoji:"🚪",word:"door",ja:"ドア",level:"normal"},
+{emoji:"🍴",word:"fork",ja:"フォーク",level:"normal"},
+{emoji:"👟",word:"shoe",ja:"くつ",level:"normal"},
+{emoji:"🧦",word:"sock",ja:"くつした",level:"normal"},
+{emoji:"✋",word:"hand",ja:"て",level:"normal"},
+{emoji:"🕐",word:"clock",ja:"とけい",level:"normal"},
+{emoji:"🏠",word:"house",ja:"いえ",level:"normal"},
+{emoji:"🪑",word:"chair",ja:"いす",level:"normal"},
+{emoji:"🌲",word:"tree",ja:"き",level:"normal"},
+
+{emoji:"🐧",word:"penguin",ja:"ペンギン",level:"hard"},
+{emoji:"🦒",word:"giraffe",ja:"きりん",level:"hard"},
+{emoji:"🐘",word:"elephant",ja:"ぞう",level:"hard"},
+{emoji:"🦚",word:"peacock",ja:"くじゃく",level:"hard"},
+{emoji:"🦜",word:"parrot",ja:"オウム",level:"hard"},
+{emoji:"🐬",word:"dolphin",ja:"イルカ",level:"hard"},
+{emoji:"🐙",word:"octopus",ja:"たこ",level:"hard"},
+{emoji:"🐿️",word:"squirrel",ja:"りす",level:"hard"},
+{emoji:"🦘",word:"kangaroo",ja:"カンガルー",level:"hard"},
+{emoji:"🐵",word:"monkey",ja:"さる",level:"hard"},
+{emoji:"🐰",word:"rabbit",ja:"うさぎ",level:"hard"},
+{emoji:"🐢",word:"turtle",ja:"かめ",level:"hard"},
+{emoji:"🕷️",word:"spider",ja:"くも",level:"hard"},
+{emoji:"🍌",word:"banana",ja:"バナナ",level:"hard"},
+{emoji:"🍊",word:"orange",ja:"オレンジ",level:"hard"},
+{emoji:"🥕",word:"carrot",ja:"にんじん",level:"hard"},
+{emoji:"🍅",word:"tomato",ja:"トマト",level:"hard"},
+{emoji:"🍒",word:"cherry",ja:"さくらんぼ",level:"hard"},
+{emoji:"🌸",word:"flower",ja:"はな",level:"hard"},
+{emoji:"🌈",word:"rainbow",ja:"にじ",level:"hard"},
+{emoji:"🚀",word:"rocket",ja:"ロケット",level:"hard"},
+{emoji:"🎸",word:"guitar",ja:"ギター",level:"hard"},
+{emoji:"🏰",word:"castle",ja:"おしろ",level:"hard"},
+{emoji:"🌉",word:"bridge",ja:"はし",level:"hard"},
+{emoji:"🦋",word:"butterfly",ja:"ちょう",level:"hard"},
+{emoji:"🦕",word:"dinosaur",ja:"きょうりゅう",level:"hard"},
+
+{emoji:"🥧",word:"pie",ja:"パイ",level:"easy"},
+{emoji:"🌊",word:"sea",ja:"うみ",level:"easy"},
+{emoji:"🍵",word:"tea",ja:"おちゃ",level:"easy"},
+{emoji:"🦵",word:"leg",ja:"あし",level:"easy"},
+{emoji:"👄",word:"lip",ja:"くちびる",level:"easy"},
+{emoji:"🪰",word:"fly",ja:"はえ",level:"easy"},
+{emoji:"🛏️",word:"bed",ja:"ベッド",level:"easy"},
+{emoji:"🥜",word:"nut",ja:"ナッツ",level:"easy"},
+{emoji:"🧊",word:"ice",ja:"こおり",level:"easy"},
+{emoji:"💎",word:"gem",ja:"ほうせき",level:"easy"},
+{emoji:"📌",word:"pin",ja:"ピン",level:"easy"},
+{emoji:"🎀",word:"bow",ja:"リボン",level:"easy"},
+{emoji:"🪓",word:"axe",ja:"おの",level:"easy"},
+{emoji:"🚐",word:"van",ja:"バン",level:"easy"},
+{emoji:"🛸",word:"ufo",ja:"ユーフォー",level:"easy"},
+{emoji:"👔",word:"tie",ja:"ネクタイ",level:"easy"},
+{emoji:"🥫",word:"can",ja:"かんづめ",level:"easy"},
+{emoji:"🪚",word:"saw",ja:"のこぎり",level:"easy"},
+{emoji:"🐛",word:"bug",ja:"むし",level:"easy"},
+{emoji:"🌫️",word:"fog",ja:"きり",level:"easy"},
+
+{emoji:"🐨",word:"koala",ja:"コアラ",level:"normal"},
+{emoji:"🐼",word:"panda",ja:"パンダ",level:"normal"},
+{emoji:"🦛",word:"hippo",ja:"カバ",level:"normal"},
+{emoji:"🦏",word:"rhino",ja:"サイ",level:"normal"},
+{emoji:"🐪",word:"camel",ja:"らくだ",level:"normal"},
+{emoji:"🐌",word:"snail",ja:"かたつむり",level:"normal"},
+{emoji:"🦢",word:"swan",ja:"はくちょう",level:"normal"},
+{emoji:"🦅",word:"eagle",ja:"わし",level:"normal"},
+{emoji:"🐚",word:"shell",ja:"かい",level:"normal"},
+{emoji:"🍈",word:"melon",ja:"メロン",level:"normal"},
+{emoji:"🍑",word:"peach",ja:"もも",level:"normal"},
+{emoji:"🥭",word:"mango",ja:"マンゴー",level:"normal"},
+{emoji:"🌽",word:"corn",ja:"とうもろこし",level:"normal"},
+{emoji:"🧅",word:"onion",ja:"たまねぎ",level:"normal"},
+{emoji:"🍞",word:"bread",ja:"パン",level:"normal"},
+{emoji:"🥓",word:"bacon",ja:"ベーコン",level:"normal"},
+{emoji:"🍕",word:"pizza",ja:"ピザ",level:"normal"},
+{emoji:"🍝",word:"pasta",ja:"パスタ",level:"normal"},
+{emoji:"🍣",word:"sushi",ja:"すし",level:"normal"},
+{emoji:"🍲",word:"soup",ja:"スープ",level:"normal"},
+{emoji:"🍩",word:"donut",ja:"ドーナツ",level:"normal"},
+{emoji:"🍬",word:"candy",ja:"あめ",level:"normal"},
+{emoji:"🍯",word:"honey",ja:"はちみつ",level:"normal"},
+{emoji:"🧃",word:"juice",ja:"ジュース",level:"normal"},
+{emoji:"🚕",word:"taxi",ja:"タクシー",level:"normal"},
+{emoji:"🚚",word:"truck",ja:"トラック",level:"normal"},
+{emoji:"✈️",word:"plane",ja:"ひこうき",level:"normal"},
+{emoji:"🚂",word:"train",ja:"でんしゃ",level:"normal"},
+{emoji:"🛶",word:"canoe",ja:"カヌー",level:"normal"},
+{emoji:"🏦",word:"bank",ja:"ぎんこう",level:"normal"},
+{emoji:"🏨",word:"hotel",ja:"ホテル",level:"normal"},
+{emoji:"🗼",word:"tower",ja:"タワー",level:"normal"},
+{emoji:"⛺",word:"tent",ja:"テント",level:"normal"},
+{emoji:"🏖️",word:"beach",ja:"ビーチ",level:"normal"},
+{emoji:"🌷",word:"tulip",ja:"チューリップ",level:"normal"},
+{emoji:"👕",word:"shirt",ja:"シャツ",level:"normal"},
+{emoji:"👗",word:"dress",ja:"ドレス",level:"normal"},
+{emoji:"👖",word:"jeans",ja:"ジーンズ",level:"normal"},
+{emoji:"👢",word:"boot",ja:"ブーツ",level:"normal"},
+{emoji:"🧤",word:"glove",ja:"てぶくろ",level:"normal"},
+{emoji:"🧣",word:"scarf",ja:"マフラー",level:"normal"},
+{emoji:"👑",word:"crown",ja:"おうかん",level:"normal"},
+{emoji:"💍",word:"ring",ja:"ゆびわ",level:"normal"},
+{emoji:"🎲",word:"dice",ja:"さいころ",level:"normal"},
+{emoji:"🎮",word:"game",ja:"ゲーム",level:"normal"},
+{emoji:"🪀",word:"yoyo",ja:"ヨーヨー",level:"normal"},
+{emoji:"📕",word:"book",ja:"ほん",level:"normal"},
+{emoji:"🥄",word:"spoon",ja:"スプーン",level:"normal"},
+{emoji:"🔪",word:"knife",ja:"ナイフ",level:"normal"},
+{emoji:"🎹",word:"piano",ja:"ピアノ",level:"normal"},
+
+{emoji:"🐹",word:"hamster",ja:"ハムスター",level:"hard"},
+{emoji:"🦔",word:"hedgehog",ja:"はりねずみ",level:"hard"},
+{emoji:"🦃",word:"turkey",ja:"しちめんちょう",level:"hard"},
+{emoji:"🦩",word:"flamingo",ja:"フラミンゴ",level:"hard"},
+{emoji:"🐊",word:"crocodile",ja:"ワニ",level:"hard"},
+{emoji:"🦎",word:"lizard",ja:"とかげ",level:"hard"},
+{emoji:"🦂",word:"scorpion",ja:"サソリ",level:"hard"},
+{emoji:"🐞",word:"ladybug",ja:"てんとうむし",level:"hard"},
+{emoji:"🦐",word:"shrimp",ja:"えび",level:"hard"},
+{emoji:"🦞",word:"lobster",ja:"いせえび",level:"hard"},
+{emoji:"🦄",word:"unicorn",ja:"ユニコーン",level:"hard"},
+{emoji:"🍓",word:"strawberry",ja:"いちご",level:"hard"},
+{emoji:"🥥",word:"coconut",ja:"ココナッツ",level:"hard"},
+{emoji:"🍍",word:"pineapple",ja:"パイナップル",level:"hard"},
+{emoji:"🥔",word:"potato",ja:"じゃがいも",level:"hard"},
+{emoji:"🍆",word:"eggplant",ja:"なす",level:"hard"},
+{emoji:"🥦",word:"broccoli",ja:"ブロッコリー",level:"hard"},
+{emoji:"🥒",word:"cucumber",ja:"きゅうり",level:"hard"},
+{emoji:"🧄",word:"garlic",ja:"にんにく",level:"hard"},
+{emoji:"🍄",word:"mushroom",ja:"きのこ",level:"hard"},
+{emoji:"🥑",word:"avocado",ja:"アボカド",level:"hard"},
+{emoji:"🧀",word:"cheese",ja:"チーズ",level:"hard"},
+{emoji:"🍔",word:"burger",ja:"ハンバーガー",level:"hard"},
+{emoji:"🥪",word:"sandwich",ja:"サンドイッチ",level:"hard"},
+{emoji:"🍪",word:"cookie",ja:"クッキー",level:"hard"},
+{emoji:"🧁",word:"cupcake",ja:"カップケーキ",level:"hard"},
+{emoji:"🍮",word:"pudding",ja:"プリン",level:"hard"},
+{emoji:"🚁",word:"helicopter",ja:"ヘリコプター",level:"hard"},
+{emoji:"🚜",word:"tractor",ja:"トラクター",level:"hard"},
+{emoji:"🚑",word:"ambulance",ja:"きゅうきゅうしゃ",level:"hard"},
+{emoji:"🌋",word:"volcano",ja:"かざん",level:"hard"},
+{emoji:"🏔️",word:"mountain",ja:"やま",level:"hard"},
+{emoji:"🌵",word:"cactus",ja:"サボテン",level:"hard"},
+{emoji:"🌻",word:"sunflower",ja:"ひまわり",level:"hard"},
+{emoji:"🪐",word:"planet",ja:"わくせい",level:"hard"},
+{emoji:"🎈",word:"balloon",ja:"ふうせん",level:"hard"},
+{emoji:"🎁",word:"present",ja:"プレゼント",level:"hard"},
+{emoji:"🧩",word:"puzzle",ja:"パズル",level:"hard"},
+{emoji:"🎻",word:"violin",ja:"バイオリン",level:"hard"},
+{emoji:"🎺",word:"trumpet",ja:"トランペット",level:"hard"},
+{emoji:"🖍️",word:"crayon",ja:"クレヨン",level:"hard"},
+{emoji:"🔭",word:"telescope",ja:"ぼうえんきょう",level:"hard"},
+{emoji:"🧲",word:"magnet",ja:"じしゃく",level:"hard"},
+{emoji:"🕯️",word:"candle",ja:"ろうそく",level:"hard"},
+{emoji:"🔨",word:"hammer",ja:"かなづち",level:"hard"},
+{emoji:"🪜",word:"ladder",ja:"はしご",level:"hard"},
+{emoji:"🪣",word:"bucket",ja:"バケツ",level:"hard"},
+{emoji:"🧺",word:"basket",ja:"かご",level:"hard"},
+{emoji:"🪞",word:"mirror",ja:"かがみ",level:"hard"},
+{emoji:"🪟",word:"window",ja:"まど",level:"hard"},
+{emoji:"🚿",word:"shower",ja:"シャワー",level:"hard"},
+{emoji:"🧽",word:"sponge",ja:"スポンジ",level:"hard"},
+{emoji:"🫖",word:"teapot",ja:"きゅうす",level:"hard"}
+];
+
+const ALPHA="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+let mode="upper",soundOn=true,current=null,input="",score=0,miss=0,maxMiss=5,gameLevel="easy",used=[],checkTimer=null;
+const letterGridEl=document.getElementById("letterGrid"),emojiEl=document.getElementById("emoji"),jaHintEl=document.getElementById("jaHint"),circleHint=document.getElementById("circleHint"),answerDisplay=document.getElementById("answerDisplay"),message=document.getElementById("message"),scoreText=document.getElementById("scoreText"),missText=document.getElementById("missText"),modeText=document.getElementById("modeText"),modeBtn=document.getElementById("modeBtn"),soundBtn=document.getElementById("soundBtn"),overlay=document.getElementById("overlay");
+
+function injectAd(container,src,w,h){
+  if(!container)return;
+  container.innerHTML="";
+  const ifr=document.createElement("iframe");
+  ifr.width=w;ifr.height=h;ifr.scrolling="no";
+  ifr.setAttribute("frameborder","0");
+  ifr.style.cssText="border:0;display:block;margin:0 auto;overflow:hidden;width:"+w+"px;height:"+h+"px;";
+  container.appendChild(ifr);
+  try{
+    const d=ifr.contentWindow.document;
+    d.open();
+    d.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width='+w+'"><style>html,body{margin:0;padding:0;overflow:hidden;text-align:center}</style></head><body><scr'+'ipt src="'+src+'"></scr'+'ipt></body></html>');
+    d.close();
+  }catch(e){}
+}
+
+function speak(text,lang){
+  if(!soundOn||!("speechSynthesis" in window))return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang=lang||"ja-JP";u.rate=lang==="en-US"?.8:.9;u.pitch=1.15;
+  speechSynthesis.speak(u);
+}
+
+function buildKeyboard(){
+  letterGridEl.innerHTML="";
+  const letters=(mode==="upper"?ALPHA:ALPHA.toLowerCase()).split("");
+  letters.forEach(ch=>{
+    const d=document.createElement("div");
+    d.className="letterBtn";d.textContent=ch;d.onclick=()=>pressLetter(ch);
+    letterGridEl.appendChild(d);
+  });
+}
+
+function getAnswer(){return mode==="upper"?current.word.toUpperCase():current.word}
+
+function updateDisplay(){
+  const a=getAnswer();
+  const chars=[...input],slots=[];
+  for(let i=0;i<a.length;i++)slots.push(chars[i]||"＿");
+  answerDisplay.textContent=slots.join(" ");
+  circleHint.textContent="○".repeat(a.length);
+  jaHintEl.textContent=current?current.ja:"";
+  scoreText.textContent="せいかい "+score;
+  missText.textContent="ミス "+miss+"/"+maxMiss;
+  modeText.textContent=mode==="upper"?"大文字 ABC":"小文字 abc";
+  modeBtn.textContent=mode==="upper"?"abc":"ABC";
+  soundBtn.textContent=soundOn?"おとON":"おとOFF";
+  soundBtn.className=soundOn?"on":"";
+}
+
+function nextQuestion(){
+  clearCheckTimer();
+  input="";
+  let pool;
+  if(gameLevel==="easy"){
+    pool=questions.filter(q=>q.level==="easy");
+  }else if(gameLevel==="normal"){
+    pool=questions.filter(q=>q.level==="easy"||q.level==="normal");
+  }else{
+    pool=questions;
+  }
+  if(used.length>=pool.length)used=[];
+  let q;
+  do{q=pool[Math.floor(Math.random()*pool.length)]}while(used.includes(q.word)&&pool.length>1);
+  used.push(q.word);
+  current=q;
+  emojiEl.textContent=current.emoji;
+  message.textContent="「"+current.ja+"」を えいごで！";
+  updateDisplay();
+  speak(current.ja,"ja-JP");
+}
+
+function clearCheckTimer(){
+  if(checkTimer){
+    clearTimeout(checkTimer);
+    checkTimer=null;
+  }
+}
+
+function scheduleCheckIfFull(){
+  clearCheckTimer();
+  const a=getAnswer();
+  if(input.length===a.length){
+    checkTimer=setTimeout(()=>{
+      checkTimer=null;
+      checkIfFull();
+    },900);
+  }
+}
+
+function pressLetter(ch){
+  if(!current)return;
+  const a=getAnswer();
+  if(input.length>=a.length)return;
+  clearCheckTimer();
+  input+=ch;
+  speak(ch,"en-US");
+  updateDisplay();
+  scheduleCheckIfFull();
+}
+
+function showAnswer(){
+  clearCheckTimer();
+  if(!current)return;
+  const a=getAnswer();
+  input=a;
+  message.textContent="こたえは「"+a+"」";
+  updateDisplay();
+  speak(current.word,"en-US");
+}
+
+function checkIfFull(){
+  const a=getAnswer();
+  if(input.length===a.length){
+    if(input===a){
+      score++;
+      message.textContent="せいかい！";
+      speak(current.word,"en-US");
+      setTimeout(nextQuestion,1100);
+    }else{
+      miss++;
+      message.textContent="もういちど";
+      speak("もういちど","ja-JP");
+      input="";
+      setTimeout(updateDisplay,280);
+      if(miss>=maxMiss)setTimeout(gameOver,500);
+    }
+  }
+}
+
+window.startGame=function startGame(level){
+  clearCheckTimer();
+  gameLevel=level;score=0;miss=0;used=[];
+  overlay.style.display="none";
+  nextQuestion();
+}
+
+function showTitle(){
+  clearCheckTimer();
+  input="";
+  overlay.style.display="flex";
+  overlay.innerHTML=`<div class="panel">
+    <h1>こども<br>ABCタッチ</h1>
+    <p>えをみて、したのアルファベットをタッチしよう。<br>えいごのたんごの つづりを おぼえられます。</p>
+
+    <div class="startButtons">
+      <button class="bigButton" type="button" onclick="startGame('easy')">やさしい</button>
+      <button class="bigButton" type="button" onclick="startGame('normal')">ふつう</button>
+      <button class="bigButton" type="button" onclick="startGame('hard')">むずかしい</button>
+    </div>
+
+    <div class="ad-large" id="titleAdBox"></div>
+  </div>`;
+
+  const adBox=document.getElementById("titleAdBox");
+  injectAd(adBox,"https://adm.shinobi.jp/s/7b3a5ddb43f4cb9eadb45b1c506ee384",300,250);
+}
+
+function gameOver(){
+  overlay.style.display="flex";
+  overlay.innerHTML=`<div class="panel">
+    <h1>おしまい</h1>
+    <p>せいかい：<b>${score}</b>もん</p>
+    <p>もういちどチャレンジしてみよう！</p>
+
+    <div class="startButtons">
+      <button class="bigButton" type="button" onclick="startGame('easy')">やさしい</button>
+      <button class="bigButton" type="button" onclick="startGame('normal')">ふつう</button>
+      <button class="bigButton" type="button" onclick="startGame('hard')">むずかしい</button>
+    </div>
+
+    <div class="ad-large" id="gameOverAd"></div>
+  </div>`;
+
+  const adBox=document.getElementById("gameOverAd");
+  injectAd(adBox,"https://adm.shinobi.jp/s/7b3a5ddb43f4cb9eadb45b1c506ee384",300,250);
+
+  speak("おしまい。もういちど やってみよう","ja-JP");
+}
+
+modeBtn.onclick=()=>{
+  clearCheckTimer();
+  mode=mode==="upper"?"lower":"upper";
+  input="";
+  buildKeyboard();
+  updateDisplay();
+  speak(mode==="upper"?"大文字":"小文字","ja-JP");
+};
+soundBtn.onclick=()=>{
+  soundOn=!soundOn;
+  if(!soundOn&&"speechSynthesis" in window)speechSynthesis.cancel();
+  updateDisplay();
+};
+document.getElementById("backBtn").onclick=()=>{clearCheckTimer();input=input.slice(0,-1);updateDisplay()};
+document.getElementById("clearBtn").onclick=()=>{clearCheckTimer();input="";updateDisplay()};
+document.getElementById("nextBtn").onclick=()=>nextQuestion();
+document.getElementById("answerBtn").onclick=()=>showAnswer();
+document.getElementById("titleBtn").onclick=()=>showTitle();
+
+document.addEventListener("click",(e)=>{
+  if(e.target && e.target.matches(".bigButton")){
+    const text=e.target.textContent.trim();
+    if(text==="やさしい") startGame("easy");
+    if(text==="ふつう") startGame("normal");
+    if(text==="むずかしい") startGame("hard");
+  }
+});
+
+buildKeyboard();
+current=questions[0];
+updateDisplay();
+</script>
+</body>
+</html>
